@@ -1,25 +1,26 @@
 import math
+import random
 
 import pandas as pd
 import numpy as np
 import equationtree as et
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    root = et.OneChildNode(math.exp)
-    child = et.OneChildNode(math.cos)
+    root = et.TwoChildNode(et.division)
+    child1 = et.OneChildNode(math.sqrt)
+    child2 = et.OneChildNode(math.sin)
+    constEnd = et.Leaf(12)
+    randL1 = et.randLeaf(1, 2)
+    nDRand1 = et.nDistLeaf(2,1)
 
-    root.insert(child)
+    root.insert(child1, child2)
+    child1.insert(nDRand1)
+    child2.insert(randL1)
 
-    t = root.getValue()
-    print(t)
+    et.printAsFormula(root, True)
+    root.update()
+    et.printAsFormula(root, True)
 
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
