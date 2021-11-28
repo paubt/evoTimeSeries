@@ -272,24 +272,19 @@ class OldValueLeaf(Node):
 
 
 # function to create a random equation tree
-def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
-    # creation variables
-    randomleafmin = 0
-    randomLeafMax = 10
-    nDistLeafMu = 10
-    nDistLeafSigma = 1
-    oldValueLeafDataFrame = df
-    oldValueLeafLagMax = 2
-    leafConstValue = 1
-
+def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, randomLeafMax, nDistLeafMu,
+                             nDistLeafSigma, oldValueLeafDataFrame, colNamesList,oldValueLeafLagMax, leafConstValue):
+    # keeps track of the fixed elements that are all ready in the tree (e.g.: the twoChildNode or a Leaf
     elementCounter = 0
+    # keeps track of the amount of branches that are currently empty and need to expanded for a correct tree
+    # ergo always when a Node still lacks a child or two
     openSpotCounter = 0
     # more efficiency could be obtained with python module blist https://pypi.org/project/blist/
     openSpots = []
-
+    # for the two Nodes the possible functions from which there can be chosen
     twoChildFunctions = [plus, minus, multiplication]
     oneChildFunctions = [math.sqrt, math.exp]
-
+    # the four possible types of Leaves
     endLeafClasses = [Leaf, RandLeaf, NDistLeaf, OldValueLeaf]
 
     # init the tree with a root that is ether one or two child node
@@ -316,24 +311,22 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
 
     # check if there is free space for a binary operation
     while len(openSpots) > 0:
-        # print the current tree
-        print(f"\nelementCounter = {elementCounter} openSpotCounter = {openSpotCounter} length of openSpots {len(openSpots)}")
-        printAsFormula(root, True)
-        # draw a random openSpot and delete it from the list
-        print(openSpots)
-
-        if len(openSpots) == 0:
-            print(f"\none last time\nelementCounter = {elementCounter} openSpotCounter = {openSpotCounter}")
-            break
-
+        # chose a random node that doesn't has child/ren and take it out of the openSpots list
         nodeToFill = openSpots.pop(random.randint(0, len(openSpots) - 1))
-        print(f"we chose {nodeToFill}")
-        # nodeToFill = random.choice(openSpots)
-        # openSpots.remove(nodeToFill)
+        # print if verbose true
+        if verbose:
+            # print the current tree
+            print(f"\nelementCounter = {elementCounter} openSpotCounter = {openSpotCounter} length of openSpots {len(openSpots)}")
+            printAsFormula(root, True)
+            # draw a random openSpot and delete it from the list
+            print(openSpots)
+            print(f"we chose {nodeToFill}")
 
-        # check if the node is a instance of twoChildNode
-
+        # if the node is a instance of twoChildNode do...
         if isinstance(nodeToFill, TwoChildNode):
+            # list to store the possible children types in
+            # note the types cann be inside more than once because:
+            # draws without replacement first for left and then for right child , effectively drawing two times
             options = []
             # this means they hit together the max and we only want to add no expanding elements ergo const and co.
             if elementCounter + openSpotCounter >= maxNumberOfElements:
@@ -379,13 +372,15 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
                 else:
                     print("we messed up bro in binary")
                     raise ValueError
-            print("options before pop1", options)
-            # choose a child for left
+
+            if verbose:
+                print("options1 are ", options)
+            # choose a type for the child for left
             # we draw a option form the option list without putting it back in
             choice = options.pop(random.randint(0, len(options)-1))
-            print(f"the choice1 is {choice}")
-            # depending on the choice add
-            # for left
+            if verbose:
+                print(f"the choice1 is {choice}")
+            # depending on the choice add the type chosen to the left
             if choice == "bL":
                 fun = random.choice(twoChildFunctions)
                 tempNode = TwoChildNode(fun)
@@ -400,11 +395,6 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
                 openSpots.append(tempNode)
                 elementCounter += 1
             if choice == "eL":
-                fun = random.choice(oneChildFunctions)
-                tempNode = OneChildNode(fun)
-                nodeToFill.left = tempNode
-                openSpots.append(tempNode)
-                elementCounter += 1
                 # draw a random Leaf Class and do in case of each create the leaf and
                 # insert into the child of the nodeToFill
                 tempClass = random.choice(endLeafClasses)
@@ -423,11 +413,15 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
                     nodeToFill.left = tempNode
                 elementCounter += 1
                 openSpotCounter -= 1
-            # same for right but
-            print("options before pop2", options)
+            # same for right
+            if verbose:
+                print("options before pop2", options)
+            # choose a type for the child for right
+            # we draw a option form the option list without putting it back in
             choice = options.pop(random.randint(0, len(options) - 1))
-            print(f"the choice2 is {choice}")
-            # for right
+            if verbose:
+                print(f"the choice2 is {choice}")
+            # depending on the choice add the type chosen to the right
             if choice == "bL":
                 fun = random.choice(twoChildFunctions)
                 tempNode = TwoChildNode(fun)
@@ -463,6 +457,8 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
 
         # if the node is a instance of OneChildNode do...
         if isinstance(nodeToFill, OneChildNode):
+            # list to store the possible children types in a list
+            # note the types can only be once in there cause we only draw once
             options = []
             # this means they hit together the max and we only want to add no expanding elements ergo const and co.
             if elementCounter + openSpotCounter >= maxNumberOfElements:
@@ -483,12 +479,14 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
                 else:
                     print("we messed up bro")
                     raise ValueError
-
-            print("options = ", end="")
-            print(options)
+            if verbose:
+                print("options =", options)
             # take a random option
+            # note here we draw with replacement cause we only draw once and thous it doesn't matters
             choice = random.choice(options)
-            print(f"choice = {choice}")
+            if verbose:
+                print(f"choice = {choice}")
+            # depending on the choice we add a children of that type as child
             # endLeaf is the choice
             if choice == "eL":
                 # draw a random Leaf Class and do in case of each create the leaf and
@@ -524,6 +522,6 @@ def createRandomEquationTree(maxNumberOfElements, df, colNamesList):
                 openSpots.append(tempNode)
                 elementCounter += 1
                 openSpotCounter += 1
-    print("\n exit create f")
-    printAsFormula(root, True)
+    if verbose:
+        printAsFormula(root, True)
     return root

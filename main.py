@@ -39,5 +39,5 @@ if __name__ == '__main__':
     '''
 
     colNameList = ['G', 'Y']
-    testTree = et.createRandomEquationTree(10, s, colNameList)
+    testTree = et.createRandomEquationTree(10, True, 0, 10, 10, 1, s, colNameList, 3, 1)
 
