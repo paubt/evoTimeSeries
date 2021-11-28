@@ -1,5 +1,6 @@
 import math
 import random
+import time
 
 import pandas as pd
 import numpy as np
@@ -39,5 +40,17 @@ if __name__ == '__main__':
     '''
 
     colNameList = ['G', 'Y']
-    testTree = et.createRandomEquationTree(10, True, 0, 10, 10, 1, s, colNameList, 3, 1)
-
+    listOfTimes = []
+    total = 0
+    for t in range(0, 20):
+        start = time.time()
+        for x in range(0, 10000):
+            tempTree = et.createRandomEquationTree(10, False, 0, 10, 10, 1, s, colNameList, 3, 1)
+            #et.printAsFormula(tempTree, True)
+        end = time.time()
+        difference = end-start
+        total += difference
+        print(f"it took {difference}seconds")
+        listOfTimes.append(difference)
+    print(f"the mean of 20 runs is {total/20}")
+    print(listOfTimes)
