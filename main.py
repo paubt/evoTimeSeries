@@ -37,6 +37,7 @@ if __name__ == '__main__':
     et.printAsFormula(root, True)
     print("\n\n")
     '''
+
     colNameList = ['G', 'Y']
-    testTree = et.createRandomEquationTree(20, s, colNameList)
+    testTree = et.createRandomEquationTree(10, s, colNameList)
 
