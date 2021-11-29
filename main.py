@@ -35,6 +35,12 @@ if __name__ == '__main__':
 
         print(f"mean error rate:{error/count}")
     '''
-    for x in range(0,10):
-        tempTree = et.createRandomEquationTree(10, False, 0, 10, 10, 1, s, colNameList, 3, 1)
-        et.printAsFormula(tempTree, True)
+
+    tempTree1 = et.createRandomEquationTree(5, False, 0, 10, 10, 1, s, colNameList, 3, 1)
+    tempTree2 = et.createRandomEquationTree(5, False, 0, 10, 10, 1, s, colNameList, 3, 1)
+    et.printAsFormula(tempTree1, True)
+    et.printAsFormula(tempTree2, True)
+    et.subtreeSwap(tempTree1, tempTree2, False)
+    print()
+    et.printAsFormula(tempTree1, True)
+    et.printAsFormula(tempTree2, True)

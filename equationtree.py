@@ -81,7 +81,7 @@ SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
 # helper function for formula printing
 def printAsFormula(root, verbose):
     if verbose:
-        print("function : ", end="")
+        print("function: ", end="")
     root.printFormula()
     if verbose:
         try:
@@ -94,11 +94,10 @@ def printAsFormula(root, verbose):
             print(" = ZeroDivisionError")
 
 
-# base node for the tree
-# the parent for all other types of nodes
+# the two base classes for the tree
+# the parent for all types of nodes
 class Node:
     # add keyword pass cause we dont wont to add any other stuff to the class
-
     def update(self, t):
         pass
 
@@ -109,6 +108,7 @@ class Node:
         pass
 
 
+# the parent for all types of leaves
 class Leaf:
     # add keyword pass cause we dont wont to add any other stuff to the class
     def update(self, t):
@@ -119,8 +119,6 @@ class Leaf:
 
     def printFormula(self):
         pass
-
-
 
 
 class OneChildNode(Node):
@@ -291,11 +289,162 @@ class OldValueLeaf(Leaf):
         approx = u'\u2248'
         print(f"{self.colName}{sub}{approx}{format(self.value, '.3f')}", end="")
 
-# Implementation of algo 57 "subtree selection"
-# 1. select from tree1 a random element (e.g. Node or Leaf)
-# 2. find in tree2 a random element of same type (eg. towChildNode, OneChildNode,...)
-# 3. swap the two elements with there subtrees
 
+# Implementation of algo 57 "subtree selection"
+# 1. select from tree1 and tree2 a random Node
+# 2. select child or at random left/right for each
+# 3. swap the subtrees of the random node
+def subtreeSwap(root1, root2, verbose):
+    # count the number of nodes
+    nodeCountRoot1 = countNodesOfTree(root1)
+    nodeCountRoot2 = countNodesOfTree(root2)
+    if verbose:
+        print("\nroot Tree1: ", end="")
+        printAsFormula(root1, True)
+        print("root Tree2: ", end="")
+        printAsFormula(root2, True)
+        print(f"Nr. of Elements in Tree1 = {countElementsOfTree(root1)} and "
+              f"Nr. of Elements in Tree2 = {countElementsOfTree(root2)}")
+        print(f"Nr. of Nodes in Tree1 = {nodeCountRoot1} and Nr. of Nodes in Tree2 = {nodeCountRoot2}")
+
+    # pick node at random form the trees
+    n1 = random.randint(1, nodeCountRoot1)
+    n2 = random.randint(1, nodeCountRoot2)
+    if verbose:
+        print(f"random Number for Tree1 = {n1} and random Number for Tree2 = {n2}")
+    # get the two subtrees
+    subTree1 = pickNode(root1, n1)
+    subTree2 = pickNode(root2, n2)
+    if verbose:
+        print("subtree 1N: ", end="")
+        printAsFormula(subTree1, True)
+        print("subtree 2N: ", end="")
+        printAsFormula(subTree2, True)
+    # choose a random child
+
+    # chose left == 0 or right == 1
+    r = random.randint(0, 1)
+    # swap the two subtrees
+    assert (isinstance(subTree1, (OneChildNode, TwoChildNode)))
+    assert (isinstance(subTree2, (OneChildNode, TwoChildNode)))
+
+    # depending on the constellation of binary and unary class do differnet swap action
+    # in the end its a simple swap with temp location
+    if isinstance(subTree1, OneChildNode):
+        if isinstance(subTree2, OneChildNode):
+            tempChild = subTree1.child
+            subTree1.child = subTree2.child
+            subTree2.child = tempChild
+        else:
+            tempChild = subTree1.child
+            # left
+            if r == 0:
+                subTree1.child = subTree2.left
+                subTree2.left = tempChild
+            # right
+            else:
+                subTree1.child = subTree2.right
+                subTree2.left = tempChild
+    elif isinstance(subTree1, TwoChildNode):
+        if r == 0:
+            tempChild = subTree1.left
+            if isinstance(subTree2, OneChildNode):
+                subTree1.left = subTree2.child
+                subTree2.child = tempChild
+            else:
+                r = random.randint(0, 1)
+                if r == 0:
+                    subTree1.left = subTree2.left
+                    subTree2.left = tempChild
+                else:
+                    subTree1.left = subTree2.right
+                    subTree2.right = tempChild
+        else:
+            tempChild = subTree1.right
+            if isinstance(subTree2, OneChildNode):
+                subTree1.right = subTree2.child
+                subTree2.child = tempChild
+            else:
+                r = random.randint(0, 1)
+                if r == 0:
+                    subTree1.right = subTree2.left
+                    subTree2.left = tempChild
+
+
+# recursive depth first search to count elements
+def countElementsOfTree(root):
+    if root is None:
+        return 0
+    stack = [root]
+    c = 0
+    while len(stack) > 0:
+        currentElement = stack.pop()
+        c += 1
+        if isinstance(currentElement, Leaf):
+            continue
+        if isinstance(currentElement, OneChildNode):
+            stack.append(currentElement.child)
+        if isinstance(currentElement, TwoChildNode):
+            stack.append(currentElement.right)
+            stack.append(currentElement.left)
+    return c
+
+
+# iterative search for the i's element in the tree using pre-order https://en.wikipedia.org/wiki/Tree_traversal
+def pickElement(root, i):
+    if root is None:
+        return None
+    stack = [root]
+    c = 0
+    while len(stack) > 0:
+        currentNode = stack.pop()
+        c += 1
+        if c == i:
+            return currentNode
+        if isinstance(currentNode, OneChildNode):
+            stack.append(currentNode.child)
+        if isinstance(currentNode, TwoChildNode):
+            stack.append(currentNode.right)
+            stack.append(currentNode.left)
+
+
+def countNodesOfTree(root):
+    if root is None:
+        return 0
+    stack = [root]
+    c = 0
+    while len(stack) > 0:
+        currentElement = stack.pop()
+        if isinstance(currentElement, Leaf):
+            continue
+        c += 1
+        if isinstance(currentElement, OneChildNode):
+            stack.append(currentElement.child)
+        if isinstance(currentElement, TwoChildNode):
+            stack.append(currentElement.right)
+            stack.append(currentElement.left)
+    return c
+
+
+# iterative search for the i's node in the tree using pre-order
+# basically same pick element only that here we skip Elements of type Leaf
+def pickNode(root, i):
+    if root is None:
+        return None
+    stack = [root]
+    c = 0
+    while len(stack) > 0:
+        currentNode = stack.pop()
+        if isinstance(currentNode, Leaf):
+            continue
+        c += 1
+        if c == i:
+            return currentNode
+        if isinstance(currentNode, OneChildNode):
+            stack.append(currentNode.child)
+        if isinstance(currentNode, TwoChildNode):
+            stack.append(currentNode.right)
+            stack.append(currentNode.left)
 
 
 # NOTICE:
