@@ -37,10 +37,6 @@ if __name__ == '__main__':
     '''
 
     tempTree1 = et.createRandomEquationTree(5, False, 0, 10, 10, 1, s, colNameList, 3, 1)
-    tempTree2 = et.createRandomEquationTree(5, False, 0, 10, 10, 1, s, colNameList, 3, 1)
     et.printAsFormula(tempTree1, True)
-    et.printAsFormula(tempTree2, True)
-    et.subtreeSwap(tempTree1, tempTree2, False)
-    print()
+    et.mutateTree(tempTree1, s, colNameList, 1)
     et.printAsFormula(tempTree1, True)
-    et.printAsFormula(tempTree2, True)

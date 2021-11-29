@@ -83,15 +83,14 @@ def printAsFormula(root, verbose):
     if verbose:
         print("function: ", end="")
     root.printFormula()
-    if verbose:
-        try:
-            print(f" = {root.getValue()}")
-        except ValueError:
-            print(" = mathDomainError")
-        except OverflowError:
-            print(" = OverflowError = to big")
-        except ZeroDivisionError:
-            print(" = ZeroDivisionError")
+    try:
+        print(f" = {root.getValue()}")
+    except ValueError:
+        print(" = mathDomainError")
+    except OverflowError:
+        print(" = OverflowError = to big")
+    except ZeroDivisionError:
+        print(" = ZeroDivisionError")
 
 
 # the two base classes for the tree
@@ -446,6 +445,50 @@ def pickNode(root, i):
             stack.append(currentNode.right)
             stack.append(currentNode.left)
 
+
+def subtreeMutate(root, dataFrame, colNameList, maxLag):
+    # determine length of Subtree
+    MAXLENGTH = 15
+    length = random.randint(1, MAXLENGTH)
+    # create a random Subtree
+    subTree = createRandomEquationTree(length, False, 0, 10, 10, 1, dataFrame, colNameList, maxLag, 1)
+    # select subtree where root is a Node
+    subRoot = pickNode(root, random.randint(1, countNodesOfTree(root)))
+    # check if unary or binary
+    if isinstance(subRoot, OneChildNode):
+        subRoot.child = subTree
+    else:
+        # fifty-fifty left or right
+        if random.random() < 0.5:
+            subRoot.left = subTree
+        else:
+            subRoot.right = subTree
+    return root
+
+def mutateTree(root, dataFrame, colNameList, maxLag):
+    # Subtree mutation
+    # pick a random subtree and replace it with a new randomly created Subtree (max element count = 15)
+    printAsFormula(root, False)
+    mutated1Root = subtreeMutate(root, dataFrame, colNameList, maxLag)
+    # erase node mutation
+    # take a node and replace it with one of its child's
+
+    # binary swap mutation
+    # swap childes of the binary operator
+
+    # Leaf value mutation
+    # change value of ConstLeaves (e.g.: ConstLeaf(42) -> ConstLeaf(69), RandLeaf(1,9) -> RandLeaf(3,6)
+
+    # Leaf type mutation
+    # change the type (class) of a leaf (e.g.: ConstLeaf(42) -> RandLeaf(3,6)
+    # note we need for the OldValueLeaf creation the dataframe, the column name list and max lag
+
+    # Node operator mutation
+    # change the operator of a Node (e.g.: plus -> minus, sqrt -> exp)
+
+
+
+    return root
 
 # NOTICE:
 # the creation of a random tree could be accomplished much more elegant and compact using recursion
