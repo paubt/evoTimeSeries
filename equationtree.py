@@ -446,6 +446,7 @@ def pickNode(root, i):
             stack.append(currentNode.left)
 
 
+# dissipation see in mutateTree()
 def subtreeMutate(root, dataFrame, colNameList, maxLag):
     # determine length of Subtree
     MAXLENGTH = 15
@@ -465,14 +466,58 @@ def subtreeMutate(root, dataFrame, colNameList, maxLag):
             subRoot.right = subTree
     return root
 
+
+# dissipation see in mutateTree()
+def eraseNodeMutate(root):
+    # select a Node to delete from tree
+    parentOfNodeToDelete = pickNode(root, random.randint(1, countNodesOfTree(root)))
+    # check if unary or binary
+    if isinstance(parentOfNodeToDelete, OneChildNode):
+        # check child delete target
+        if isinstance(parentOfNodeToDelete.child, OneChildNode):
+            parentOfNodeToDelete.child = parentOfNodeToDelete.child.child
+        elif isinstance(parentOfNodeToDelete.child, TwoChildNode):
+            if random.random() < 0.5:
+                parentOfNodeToDelete.child = parentOfNodeToDelete.child.left
+            else:
+                parentOfNodeToDelete.child = parentOfNodeToDelete.child.right
+
+    else:
+        # left
+        if random.random() < 0.5:
+            if isinstance(parentOfNodeToDelete.left, OneChildNode):
+                parentOfNodeToDelete.left = parentOfNodeToDelete.left.child
+            elif isinstance(parentOfNodeToDelete.left, TwoChildNode):
+                if random.random() < 0.5:
+                    parentOfNodeToDelete.left = parentOfNodeToDelete.left.left
+                else:
+                    parentOfNodeToDelete.left = parentOfNodeToDelete.left.right
+        # right
+        else:
+            if isinstance(parentOfNodeToDelete.right, OneChildNode):
+                parentOfNodeToDelete.right = parentOfNodeToDelete.right.child
+            elif isinstance(parentOfNodeToDelete.right, TwoChildNode):
+                if random.random() < 0.5:
+                    parentOfNodeToDelete.right = parentOfNodeToDelete.right.left
+                else:
+                    parentOfNodeToDelete.right = parentOfNodeToDelete.right.right
+    return root
+
+
+# main mutation function
 def mutateTree(root, dataFrame, colNameList, maxLag):
     # Subtree mutation
     # pick a random subtree and replace it with a new randomly created Subtree (max element count = 15)
+    """
     printAsFormula(root, False)
     mutated1Root = subtreeMutate(root, dataFrame, colNameList, maxLag)
+    printAsFormula(root, False)
+    """
     # erase node mutation
     # take a node and replace it with one of its child's
-
+    printAsFormula(root, False)
+    mutated2Root = eraseNodeMutate(root)
+    printAsFormula(mutated2Root, False)
     # binary swap mutation
     # swap childes of the binary operator
 
@@ -486,9 +531,8 @@ def mutateTree(root, dataFrame, colNameList, maxLag):
     # Node operator mutation
     # change the operator of a Node (e.g.: plus -> minus, sqrt -> exp)
 
-
-
     return root
+
 
 # NOTICE:
 # the creation of a random tree could be accomplished much more elegant and compact using recursion
