@@ -98,8 +98,19 @@ def printAsFormula(root, verbose):
 # the parent for all other types of nodes
 class Node:
     # add keyword pass cause we dont wont to add any other stuff to the class
-    pass
 
+    def update(self, t):
+        pass
+
+    def getValue(self):
+        pass
+
+    def printFormula(self):
+        pass
+
+
+class Leaf:
+    # add keyword pass cause we dont wont to add any other stuff to the class
     def update(self, t):
         pass
 
@@ -190,7 +201,7 @@ class TwoChildNode(Node):
         print(")", end="")
 
 
-class Leaf(Node):
+class ConstLeaf(Leaf):
     def __init__(self, value):
         self.value = value
 
@@ -210,7 +221,7 @@ class Leaf(Node):
 
 
 # node that produces a random float with: min < x < max
-class RandLeaf(Node):
+class RandLeaf(Leaf):
     # constructor
     def __init__(self, minimum, maximum):
         self.minimum = minimum
@@ -232,7 +243,7 @@ class RandLeaf(Node):
 
 
 # node that draws from a random distribution
-class NDistLeaf(Node):
+class NDistLeaf(Leaf):
     def __init__(self, mu, sigma):
         self.mu = mu
         self.sigma = sigma
@@ -249,7 +260,7 @@ class NDistLeaf(Node):
         print(f"N({self.mu},{self.sigma}){approx}{format(self.value, '.3f')}", end="")
 
 
-class OldValueLeaf(Node):
+class OldValueLeaf(Leaf):
     def __init__(self, dataFrame, colName, lag, t):
         self.dataFrame = dataFrame
         self.colName = colName
@@ -305,7 +316,7 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
     twoChildFunctions = [plus, minus, multiplication, division, power]
     oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
     # the four possible types of Leaves
-    endLeafClasses = [Leaf, RandLeaf, NDistLeaf, OldValueLeaf]
+    endLeafClasses = [ConstLeaf, RandLeaf, NDistLeaf, OldValueLeaf]
 
     # init the tree with a root that is ether one or two child node
     if random.random() < 0.5:
@@ -419,7 +430,7 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
                 # draw a random Leaf Class and do in case of each create the leaf and
                 # insert into the child of the nodeToFill
                 tempClass = random.choice(endLeafClasses)
-                if tempClass is Leaf:
+                if tempClass is ConstLeaf:
                     tempNode = tempClass(leafConstValue)
                     nodeToFill.left = tempNode
                 if tempClass is RandLeaf:
@@ -460,7 +471,7 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
                 # draw a random Leaf Class and do in case of each create the leaf and
                 # insert into the child of the nodeToFill
                 tempClass = random.choice(endLeafClasses)
-                if tempClass is Leaf:
+                if tempClass is ConstLeaf:
                     tempNode = tempClass(leafConstValue)
                     nodeToFill.right = tempNode
                 if tempClass is RandLeaf:
@@ -513,7 +524,7 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
                 # draw a random Leaf Class and do in case of each create the leaf and
                 # insert into the child of the nodeToFill
                 tempClass = random.choice(endLeafClasses)
-                if tempClass is Leaf:
+                if tempClass is ConstLeaf:
                     tempNode = tempClass(leafConstValue)
                     nodeToFill.child = tempNode
                 if tempClass is RandLeaf:
