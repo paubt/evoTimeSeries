@@ -18,7 +18,7 @@ def multiplication(a, b):
 
 def division(a, divisor):
     # check that denominator unequal zero
-    assert divisor != 0
+    # assert divisor != 0
     return a / divisor
 
 
@@ -26,12 +26,13 @@ def power(base, exponent):
     return math.pow(base, exponent)
 
 
-def uniformRandom(a, b):
+'''def uniformRandom(a, b):
     return random.uniform(a, b)
 
 
 def normalDistribution(a, b):
     return random.normalvariate(a, b)
+'''
 
 
 # return the max value: x = 710
@@ -43,6 +44,7 @@ def sinHyper(a):
             return math.sinh(710)
         else:
             return math.sinh(-710)
+
 
 def cosHyper(a):
     try:
@@ -56,17 +58,20 @@ def cosHyper(a):
 
 # helper function to translate from function name to operator character
 dictFunNameToSym = {
+    # binary
     "division": '/',
     "minus": '-',
     "plus": '+',
     "multiplication": '*',
+    "power": "^",
+    # unary
     "exp": "exp",
     "sqrt": "sqrt",
-    "power": "^",
-    # trigonometric functions
     "sin": "sin",
     "cos": "cos",
     "tan": "tan",
+    "log2": "log2",
+    "log10": "log10",
 
 }
 # helper translator to subscript
@@ -85,6 +90,9 @@ def printAsFormula(root, verbose):
             print(" = mathDomainError")
         except OverflowError:
             print(" = OverflowError = to big")
+        except ZeroDivisionError:
+            print(" = ZeroDivisionError")
+
 
 # base node for the tree
 # the parent for all other types of nodes
@@ -100,6 +108,8 @@ class Node:
 
     def printFormula(self):
         pass
+
+
 
 
 class OneChildNode(Node):
@@ -270,10 +280,20 @@ class OldValueLeaf(Node):
         approx = u'\u2248'
         print(f"{self.colName}{sub}{approx}{format(self.value, '.3f')}", end="")
 
+# Implementation of algo 57 "subtree selection"
+# 1. select from tree1 a random element (e.g. Node or Leaf)
+# 2. find in tree2 a random element of same type (eg. towChildNode, OneChildNode,...)
+# 3. swap the two elements with there subtrees
+
+
+
+# NOTICE:
+# the creation of a random tree could be accomplished much more elegant and compact using recursion
+# algo 53 "The Grow Algorithm" in Essentials of Metaheuristics
 
 # function to create a random equation tree
 def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, randomLeafMax, nDistLeafMu,
-                             nDistLeafSigma, oldValueLeafDataFrame, colNamesList,oldValueLeafLagMax, leafConstValue):
+                             nDistLeafSigma, oldValueLeafDataFrame, colNamesList, oldValueLeafLagMax, leafConstValue):
     # keeps track of the fixed elements that are all ready in the tree (e.g.: the twoChildNode or a Leaf
     elementCounter = 0
     # keeps track of the amount of branches that are currently empty and need to expanded for a correct tree
@@ -282,8 +302,8 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
     # more efficiency could be obtained with python module blist https://pypi.org/project/blist/
     openSpots = []
     # for the two Nodes the possible functions from which there can be chosen
-    twoChildFunctions = [plus, minus, multiplication]
-    oneChildFunctions = [math.sqrt, math.exp]
+    twoChildFunctions = [plus, minus, multiplication, division, power]
+    oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
     # the four possible types of Leaves
     endLeafClasses = [Leaf, RandLeaf, NDistLeaf, OldValueLeaf]
 
@@ -316,7 +336,8 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
         # print if verbose true
         if verbose:
             # print the current tree
-            print(f"\nelementCounter = {elementCounter} openSpotCounter = {openSpotCounter} length of openSpots {len(openSpots)}")
+            print(
+                f"\nelementCounter = {elementCounter} openSpotCounter = {openSpotCounter} length of openSpots {len(openSpots)}")
             printAsFormula(root, True)
             # draw a random openSpot and delete it from the list
             print(openSpots)
@@ -377,7 +398,7 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
                 print("options1 are ", options)
             # choose a type for the child for left
             # we draw a option form the option list without putting it back in
-            choice = options.pop(random.randint(0, len(options)-1))
+            choice = options.pop(random.randint(0, len(options) - 1))
             if verbose:
                 print(f"the choice1 is {choice}")
             # depending on the choice add the type chosen to the left
