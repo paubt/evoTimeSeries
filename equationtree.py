@@ -77,6 +77,10 @@ dictFunNameToSym = {
 # helper translator to subscript
 SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
 
+# global list of all functions
+twoChildFunctions = [plus, minus, multiplication, division, power]
+oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
+
 
 # helper function for formula printing
 def printAsFormula(root, verbose):
@@ -289,6 +293,10 @@ class OldValueLeaf(Leaf):
         print(f"{self.colName}{sub}{approx}{format(self.value, '.3f')}", end="")
 
 
+# define global list of all Leaf subclasses
+endLeafClasses = [ConstLeaf, RandLeaf, NDistLeaf, OldValueLeaf]
+
+
 # Implementation of algo 57 "subtree selection"
 # 1. select from tree1 and tree2 a random Node
 # 2. select child or at random left/right for each
@@ -478,7 +486,6 @@ def pickSpecificClass(root, i, classOfInterest):
             c += 1
             if c == i:
                 return currentNode
-
         if isinstance(currentNode, OneChildNode):
             stack.append(currentNode.child)
         if isinstance(currentNode, TwoChildNode):
@@ -487,10 +494,9 @@ def pickSpecificClass(root, i, classOfInterest):
 
 
 # dissipation see in mutateTree()
-def subtreeMutate(root, dataFrame, colNameList, maxLag):
+def subtreeMutate(root, dataFrame, colNameList, maxLag, maxLength):
     # determine length of Subtree
-    MAXLENGTH = 15
-    length = random.randint(1, MAXLENGTH)
+    length = random.randint(1, maxLength)
     # create a random Subtree
     subTree = createRandomEquationTree(length, False, 0, 10, 10, 1, dataFrame, colNameList, maxLag, 1)
     # select subtree where root is a Node
@@ -522,7 +528,7 @@ def eraseNodeMutate(root):
             else:
                 parentOfNodeToDelete.child = parentOfNodeToDelete.child.right
 
-    else:
+    elif isinstance(parentOfNodeToDelete, TwoChildNode):
         # left
         if random.random() < 0.5:
             if isinstance(parentOfNodeToDelete.left, OneChildNode):
@@ -545,7 +551,10 @@ def eraseNodeMutate(root):
 
 
 # dissipation see in mutateTree()
-def exchangeNodeMutation(root, nodesToExchange, oneChildFunctions, twoChildFunctions):
+def exchangeNodeMutation(root, nodesToExchange):
+    # use global function lists
+    global oneChildFunctions
+    global twoChildFunctions
     # repeat it n times
     while nodesToExchange > 0:
         # pick a random node
@@ -583,10 +592,12 @@ def leafValueMutation(root, nChanges, mu, sigma):
 
 
 # dissipation see in mutateTree()
-def exchangeLeafMutation(root, leavesToExchange, leafClasses, dataFrame, colNameList, maxLag, constMU, constSigma,
+def exchangeLeafMutation(root, leavesToExchange, dataFrame, colNameList, maxLag, constMU, constSigma,
                          randMin, randMax, nMu, nSigma):
+    # use global leaf sub classes list
+    global endLeafClasses
     # count the number of Leaves
-    n = countElementsOfTreeOfSpecificClass(root, tuple(leafClasses))
+    n = countElementsOfTreeOfSpecificClass(root, tuple(endLeafClasses))
     # if there are less leaves than changes requested adjust the the changes down
     if leavesToExchange > n:
         leavesToExchange = n
@@ -599,17 +610,17 @@ def exchangeLeafMutation(root, leavesToExchange, leafClasses, dataFrame, colName
         node = pickNode(root, random.randint(1, nodeCount))
         # if it's unary
         if isinstance(node, OneChildNode):
-            if isinstance(node.child, tuple(leafClasses)):
-                newLeafClass = random.choice(leafClasses)
+            if isinstance(node.child, tuple(endLeafClasses)):
+                newLeafClass = random.choice(endLeafClasses)
                 if newLeafClass is ConstLeaf:
-                    newLeaf = newLeafClass(random.normalvariate(constMU,constSigma))
+                    newLeaf = newLeafClass(random.normalvariate(constMU, constSigma))
                 if newLeafClass is RandLeaf:
                     newLeaf = RandLeaf(randMin, randMax)
                 if newLeafClass is NDistLeaf:
                     newLeaf = NDistLeaf(nMu, nSigma)
                 else:
                     newLeaf = OldValueLeaf(dataFrame, random.choice(colNameList),
-                                            random.randint(1, maxLag), 0)
+                                           random.randint(1, maxLag), 0)
                 node.child = newLeaf
                 leavesToExchange -= 1
             else:
@@ -618,8 +629,8 @@ def exchangeLeafMutation(root, leavesToExchange, leafClasses, dataFrame, colName
         if isinstance(node, TwoChildNode):
             # left
             if random.random() < 0.5:
-                if isinstance(node.left, tuple(leafClasses)):
-                    newLeafClass = random.choice(leafClasses)
+                if isinstance(node.left, tuple(endLeafClasses)):
+                    newLeafClass = random.choice(endLeafClasses)
                     if newLeafClass is ConstLeaf:
                         newLeaf = newLeafClass(random.normalvariate(constMU, constSigma))
                     if newLeafClass is RandLeaf:
@@ -634,8 +645,8 @@ def exchangeLeafMutation(root, leavesToExchange, leafClasses, dataFrame, colName
                 else:
                     continue
             else:
-                if isinstance(node.right, tuple(leafClasses)):
-                    newLeafClass = random.choice(leafClasses)
+                if isinstance(node.right, tuple(endLeafClasses)):
+                    newLeafClass = random.choice(endLeafClasses)
                     if newLeafClass is ConstLeaf:
                         newLeaf = newLeafClass(random.normalvariate(constMU, constSigma))
                     if newLeafClass is RandLeaf:
@@ -656,48 +667,32 @@ def exchangeLeafMutation(root, leavesToExchange, leafClasses, dataFrame, colName
 def mutateTree(root, dataFrame, colNameList, maxLag):
     # Subtree mutation
     # pick a random subtree and replace it with a new randomly created Subtree (max element count = 15)
-    """
     printAsFormula(root, False)
-    mutated1Root = subtreeMutate(root, dataFrame, colNameList, maxLag)
-    printAsFormula(root, False)
-    """
+    mutated1Root = subtreeMutate(root, dataFrame, colNameList, maxLag, 10)
+    printAsFormula(mutated1Root, False)
     # erase node mutation
     # take a node and replace it with one of its child's
-    """
-    printAsFormula(root, False)
-    mutated2Root = eraseNodeMutate(root)
+    mutated2Root = eraseNodeMutate(mutated1Root)
     printAsFormula(mutated2Root, False)
-    """
     # binary and unary swap mutation,
-    # swap childes of the nodes
-    """
-    printAsFormula(root, False)
+    # change the operator of a Node (e.g.: plus -> minus, sqrt -> exp)
     nodesToExchange = 2
-    oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
-    twoChildFunctions = [plus, minus, multiplication, division, power]
-    mutated2Root = exchangeNodeMutation(root, nodesToExchange, oneChildFunctions, twoChildFunctions)
-    printAsFormula(mutated2Root, False)
-    """
+    # oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
+    # twoChildFunctions = [plus, minus, multiplication, division, power]
+    mutated3Root = exchangeNodeMutation(mutated2Root, nodesToExchange)
+    printAsFormula(mutated3Root, False)
     # Leaf value mutation
     # change value of ConstLeaves (e.g.: ConstLeaf(42) -> ConstLeaf(69), RandLeaf(1,9) -> RandLeaf(3,6)
-    """
-    printAsFormula(root, False)
-    mutated3Root = leafValueMutation(root, 2, 9, 1)
-    printAsFormula(mutated3Root, False)
-    """
+    mutated4Root = leafValueMutation(mutated3Root, 2, 9, 1)
+    printAsFormula(mutated4Root, False)
     # Leaf type mutation
     # change the type (class) of a leaf (e.g.: ConstLeaf(42) -> RandLeaf(3,6)
     # note we need for the OldValueLeaf creation the dataframe, the column name list and max lag
-    printAsFormula(root, False)
-    endLeafClasses = [ConstLeaf, RandLeaf, NDistLeaf, OldValueLeaf]
-    mutated4Root = exchangeLeafMutation(root, 2, endLeafClasses, dataFrame, colNameList, maxLag,
-                                        constMU=10, constSigma= 1, randMin=1, randMax=10, nMu=10, nSigma=1)
+    mutated5Root = exchangeLeafMutation(mutated4Root, 2, dataFrame, colNameList, maxLag,
+                                        constMU=10, constSigma=1, randMin=1, randMax=10, nMu=10, nSigma=1)
 
-    printAsFormula(mutated4Root, False)
-    # Node operator mutation
-    # change the operator of a Node (e.g.: plus -> minus, sqrt -> exp)
-
-    return root
+    printAsFormula(mutated5Root, False)
+    return mutated5Root
 
 
 # NOTICE:
@@ -714,11 +709,11 @@ def createRandomEquationTree(maxNumberOfElements, verbose, randomleafmin, random
     openSpotCounter = 0
     # more efficiency could be obtained with python module blist https://pypi.org/project/blist/
     openSpots = []
-    # for the two Nodes the possible functions from which there can be chosen
-    twoChildFunctions = [plus, minus, multiplication, division, power]
-    oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
+    # use global function lists
+    global twoChildFunctions
+    global oneChildFunctions
     # the four possible types of Leaves
-    endLeafClasses = [ConstLeaf, RandLeaf, NDistLeaf, OldValueLeaf]
+    global endLeafClasses
 
     # init the tree with a root that is ether one or two child node
     if random.random() < 0.5:
