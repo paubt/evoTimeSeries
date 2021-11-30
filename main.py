@@ -36,7 +36,7 @@ if __name__ == '__main__':
         print(f"mean error rate:{error/count}")
     '''
 
-    tempTree1 = et.createRandomEquationTree(20, False, 0, 10, 10, 1, s, colNameList, 3, 1)
+    tempTree1 = et.createRandomEquationTree(30, False, 0, 10, 10, 1, s, colNameList, 3, 1)
     et.printAsFormula(tempTree1, True)
     print()
     et.mutateTree(tempTree1, s, colNameList, 1)

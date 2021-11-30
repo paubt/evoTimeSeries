@@ -446,6 +446,46 @@ def pickNode(root, i):
             stack.append(currentNode.left)
 
 
+def countElementsOfTreeOfSpecificClass(root, classOfInterest):
+    if root is None:
+        return 0
+    stack = [root]
+    c = 0
+    while len(stack) > 0:
+        currentElement = stack.pop()
+        if isinstance(currentElement, Leaf):
+            if isinstance(currentElement, classOfInterest):
+                c += 1
+            continue
+        if isinstance(currentElement, OneChildNode):
+            stack.append(currentElement.child)
+        if isinstance(currentElement, TwoChildNode):
+            stack.append(currentElement.right)
+            stack.append(currentElement.left)
+    return c
+
+
+# iterative search for the i's element in the tree using pre-order https://en.wikipedia.org/wiki/Tree_traversal
+def pickSpecificClass(root, i, classOfInterest):
+    if root is None:
+        return None
+    stack = [root]
+    c = 0
+    while len(stack) > 0:
+        currentNode = stack.pop()
+
+        if isinstance(currentNode, classOfInterest):
+            c += 1
+            if c == i:
+                return currentNode
+
+        if isinstance(currentNode, OneChildNode):
+            stack.append(currentNode.child)
+        if isinstance(currentNode, TwoChildNode):
+            stack.append(currentNode.right)
+            stack.append(currentNode.left)
+
+
 # dissipation see in mutateTree()
 def subtreeMutate(root, dataFrame, colNameList, maxLag):
     # determine length of Subtree
@@ -504,6 +544,114 @@ def eraseNodeMutate(root):
     return root
 
 
+# dissipation see in mutateTree()
+def exchangeNodeMutation(root, nodesToExchange, oneChildFunctions, twoChildFunctions):
+    # repeat it n times
+    while nodesToExchange > 0:
+        # pick a random node
+        node = pickNode(root, random.randint(1, countNodesOfTree(root)))
+        # exchange the operator of ether the binary or unary node
+        if isinstance(node, OneChildNode):
+            node.operation = random.choice(oneChildFunctions)
+        else:
+            node.operation = random.choice(twoChildFunctions)
+        nodesToExchange -= 1
+    return root
+
+
+# dissipation see in mutateTree()
+def leafValueMutation(root, nChanges, mu, sigma):
+    # make sure that there are enough constLeaves to mutate
+    n = countElementsOfTreeOfSpecificClass(root, ConstLeaf)
+    # if there are no ConstLeaves exit immediately
+    if n == 0:
+        return root
+    # if there are less constLeaves than specified by function input -> only change all constLeaves in the tree
+    if nChanges > n:
+        nChanges = n
+    # repeat n times
+    while nChanges > 0:
+        # draw a new random value form normal distribution
+        newValue = random.normalvariate(mu, sigma)
+        # random position for the const leaf
+        r = random.randint(1, countElementsOfTreeOfSpecificClass(root, ConstLeaf))
+        # pick a random const Leaf
+        chosenLeaf = pickSpecificClass(root, r, ConstLeaf)
+        chosenLeaf.value = newValue
+        nChanges -= 1
+    return root
+
+
+# dissipation see in mutateTree()
+def exchangeLeafMutation(root, leavesToExchange, leafClasses, dataFrame, colNameList, maxLag, constMU, constSigma,
+                         randMin, randMax, nMu, nSigma):
+    # count the number of Leaves
+    n = countElementsOfTreeOfSpecificClass(root, tuple(leafClasses))
+    # if there are less leaves than changes requested adjust the the changes down
+    if leavesToExchange > n:
+        leavesToExchange = n
+
+    # number of nodes in the tree
+    nodeCount = countNodesOfTree(root)
+    # repeat n times the
+    while leavesToExchange > 0:
+        # pick a random node
+        node = pickNode(root, random.randint(1, nodeCount))
+        # if it's unary
+        if isinstance(node, OneChildNode):
+            if isinstance(node.child, tuple(leafClasses)):
+                newLeafClass = random.choice(leafClasses)
+                if newLeafClass is ConstLeaf:
+                    newLeaf = newLeafClass(random.normalvariate(constMU,constSigma))
+                if newLeafClass is RandLeaf:
+                    newLeaf = RandLeaf(randMin, randMax)
+                if newLeafClass is NDistLeaf:
+                    newLeaf = NDistLeaf(nMu, nSigma)
+                else:
+                    newLeaf = OldValueLeaf(dataFrame, random.choice(colNameList),
+                                            random.randint(1, maxLag), 0)
+                node.child = newLeaf
+                leavesToExchange -= 1
+            else:
+                continue
+        # if it's binary
+        if isinstance(node, TwoChildNode):
+            # left
+            if random.random() < 0.5:
+                if isinstance(node.left, tuple(leafClasses)):
+                    newLeafClass = random.choice(leafClasses)
+                    if newLeafClass is ConstLeaf:
+                        newLeaf = newLeafClass(random.normalvariate(constMU, constSigma))
+                    if newLeafClass is RandLeaf:
+                        newLeaf = RandLeaf(randMin, randMax)
+                    if newLeafClass is NDistLeaf:
+                        newLeaf = NDistLeaf(nMu, nSigma)
+                    else:
+                        newLeaf = OldValueLeaf(dataFrame, random.choice(colNameList),
+                                               random.randint(1, maxLag), 0)
+                    node.left = newLeaf
+                    leavesToExchange -= 1
+                else:
+                    continue
+            else:
+                if isinstance(node.right, tuple(leafClasses)):
+                    newLeafClass = random.choice(leafClasses)
+                    if newLeafClass is ConstLeaf:
+                        newLeaf = newLeafClass(random.normalvariate(constMU, constSigma))
+                    if newLeafClass is RandLeaf:
+                        newLeaf = RandLeaf(randMin, randMax)
+                    if newLeafClass is NDistLeaf:
+                        newLeaf = NDistLeaf(nMu, nSigma)
+                    else:
+                        newLeaf = OldValueLeaf(dataFrame, random.choice(colNameList),
+                                               random.randint(1, maxLag), 0)
+                    node.right = newLeaf
+                    leavesToExchange -= 1
+                else:
+                    continue
+    return root
+
+
 # main mutation function
 def mutateTree(root, dataFrame, colNameList, maxLag):
     # Subtree mutation
@@ -515,19 +663,37 @@ def mutateTree(root, dataFrame, colNameList, maxLag):
     """
     # erase node mutation
     # take a node and replace it with one of its child's
+    """
     printAsFormula(root, False)
     mutated2Root = eraseNodeMutate(root)
     printAsFormula(mutated2Root, False)
-    # binary swap mutation
-    # swap childes of the binary operator
-
+    """
+    # binary and unary swap mutation,
+    # swap childes of the nodes
+    """
+    printAsFormula(root, False)
+    nodesToExchange = 2
+    oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
+    twoChildFunctions = [plus, minus, multiplication, division, power]
+    mutated2Root = exchangeNodeMutation(root, nodesToExchange, oneChildFunctions, twoChildFunctions)
+    printAsFormula(mutated2Root, False)
+    """
     # Leaf value mutation
     # change value of ConstLeaves (e.g.: ConstLeaf(42) -> ConstLeaf(69), RandLeaf(1,9) -> RandLeaf(3,6)
-
+    """
+    printAsFormula(root, False)
+    mutated3Root = leafValueMutation(root, 2, 9, 1)
+    printAsFormula(mutated3Root, False)
+    """
     # Leaf type mutation
     # change the type (class) of a leaf (e.g.: ConstLeaf(42) -> RandLeaf(3,6)
     # note we need for the OldValueLeaf creation the dataframe, the column name list and max lag
+    printAsFormula(root, False)
+    endLeafClasses = [ConstLeaf, RandLeaf, NDistLeaf, OldValueLeaf]
+    mutated4Root = exchangeLeafMutation(root, 2, endLeafClasses, dataFrame, colNameList, maxLag,
+                                        constMU=10, constSigma= 1, randMin=1, randMax=10, nMu=10, nSigma=1)
 
+    printAsFormula(mutated4Root, False)
     # Node operator mutation
     # change the operator of a Node (e.g.: plus -> minus, sqrt -> exp)
 
