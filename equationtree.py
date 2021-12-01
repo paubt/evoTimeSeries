@@ -1,6 +1,7 @@
 import math
 import random
 import pandas as pd
+import numpy as np
 
 # define here functions for the equations
 
