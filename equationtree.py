@@ -1,6 +1,6 @@
 import math
 import random
-
+import pandas as pd
 
 # define here functions for the equations
 
@@ -262,8 +262,9 @@ class NDistLeaf(Leaf):
 
 
 class OldValueLeaf(Leaf):
-    def __init__(self, dataFrame, colName, lag, t):
-        self.dataFrame = dataFrame
+    def __init__(self, dataStructure, colName, lag, t):
+        # dataStructure can ether be Dataframe or Series
+        self.dataStructure = dataStructure
         self.colName = colName
         # the lag should always be one or higher
         if lag <= 0:
@@ -277,11 +278,15 @@ class OldValueLeaf(Leaf):
         self.t = t
         # calculate time with respect to lag
         laggedTime = self.t - self.lag
-        # check that time - lag >= 0
+        # check that time - lag >= 1
         if laggedTime >= 0:
-            self.value = self.dataFrame.loc[laggedTime, self.colName]
+            # if we have a dataFrame as the dataStructure do...
+            if isinstance(self.dataStructure, pd.DataFrame):
+                self.value = self.dataStructure.loc[self.t, self.colName]
+            # else if dataStructure is Series
+            if isinstance(self.dataStructure, pd.Series):
+                self.value = self.dataStructure.iloc[self.t]
         else:
-
             self.value = 0
 
     def getValue(self):
@@ -494,11 +499,11 @@ def pickSpecificClass(root, i, classOfInterest):
 
 
 # dissipation see in mutateTree()
-def subtreeMutate(root, dataFrame, colNameList, maxLag, maxLength):
+def subtreeMutate(root, dataStructure, colNameList, maxLag, maxLength):
     # determine length of Subtree
     length = random.randint(1, maxLength)
     # create a random Subtree
-    subTree = createRandomEquationTree(length, False, 0, 10, 10, 1, dataFrame, colNameList, maxLag, 1)
+    subTree = createRandomEquationTree(length, False, 0, 10, 10, 1, dataStructure, colNameList, maxLag, 1)
     # select subtree where root is a Node
     subRoot = pickNode(root, random.randint(1, countNodesOfTree(root)))
     # check if unary or binary

@@ -10,8 +10,11 @@ import inout
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    # set random seed for reproducibility
+    #random.seed(3)
+
     df = inout.readInCSV("data/gasincome.csv")
-    colNameList = ['G', 'Y']
+    colNameList = ['G']
     listOfTimes = []
 
     ''' 
@@ -36,13 +39,9 @@ if __name__ == '__main__':
     '''
 
     tempTree1 = et.createRandomEquationTree(10, False, 0, 10, 10, 1, df, colNameList, 3, 1)
-    et.printAsFormula(tempTree1, True);
-    print()
-
     # first only use itself for predicting
     # drop 'Y' and transform the dataFrame to a Series
     df.drop(columns=['Y'], inplace=True)
 
     s = pd.Series(df['G'], index=df.index)
-
-    ts.evaluateTimeSeries(s, tempTree1, 5)
+    ts.evaluateTimeSeries(s, 1)
