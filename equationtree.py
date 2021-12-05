@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import numpy as np
 
+
 # define here functions for the equations
 
 def minus(a, b):
@@ -84,7 +85,7 @@ oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log
 
 
 # helper function for formula printing
-def printAsFormula(root, verbose):
+def printAsFormula(root, verbose=False):
     if verbose:
         print("function: ", end="")
     root.printFormula()
@@ -132,6 +133,12 @@ class OneChildNode(Node):
         # function that only takes one input
         self.operation = operation
 
+    def copyMe(self):
+        childCopy = self.child.copyMe()
+        t = OneChildNode(self.operation)
+        t.insert(childCopy)
+        return t
+
     # insert new child
     def insert(self, child):
         self.child = child
@@ -162,6 +169,13 @@ class TwoChildNode(Node):
         self.left = None
         self.right = None
         self.operation = operation
+
+    def copyMe(self):
+        leftCopy = self.left.copyMe()
+        rightCopy = self.right.copyMe()
+        t = TwoChildNode(self.operation)
+        t.insert(leftCopy, rightCopy)
+        return t
 
     # insert new child
     def insert(self, left, right):
@@ -207,6 +221,9 @@ class ConstLeaf(Leaf):
     def __init__(self, value):
         self.value = value
 
+    def copyMe(self):
+        return ConstLeaf(self.value)
+
     def getValue(self):
         return self.value
 
@@ -230,6 +247,9 @@ class RandLeaf(Leaf):
         self.maximum = maximum
         self.value = random.uniform(minimum, maximum)
 
+    def copyMe(self):
+        return RandLeaf(self.minimum, self.maximum)
+
     # updates the random values
     def update(self, t):
         self.value = random.uniform(self.minimum, self.maximum)
@@ -250,6 +270,9 @@ class NDistLeaf(Leaf):
         self.mu = mu
         self.sigma = sigma
         self.value = random.normalvariate(self.mu, self.sigma)
+
+    def copyMe(self):
+        return NDistLeaf(self.mu, self.sigma)
 
     def update(self, t):
         self.value = random.normalvariate(self.mu, self.sigma)
@@ -274,6 +297,9 @@ class OldValueLeaf(Leaf):
         self.t = t
         self.value = 0
         self.update(self.t)
+
+    def copyMe(self):
+        return OldValueLeaf(self.dataStructure, self.colName, self.lag, self.t)
 
     def update(self, t):
         self.t = t
@@ -670,35 +696,49 @@ def exchangeLeafMutation(root, leavesToExchange, dataFrame, colNameList, maxLag,
 
 
 # main mutation function
-def mutateTree(root, dataFrame, colNameList, maxLag):
+def mutateTree(root, dataFrame, colNameList, maxLag, verbose=False, stMR=0.4, ernMR=0.4, exnMR=0.4, lvMR=0.4,
+               exlMR=0.2):
     # Subtree mutation
     # pick a random subtree and replace it with a new randomly created Subtree (max element count = 15)
-    printAsFormula(root, False)
-    mutated1Root = subtreeMutate(root, dataFrame, colNameList, maxLag, 10)
-    printAsFormula(mutated1Root, False)
+    if verbose:
+        printAsFormula(root, False)
+    while random.random() < stMR:
+        root = subtreeMutate(root, dataFrame, colNameList, maxLag, 10)
+    if verbose:
+        printAsFormula(root, False)
     # erase node mutation
     # take a node and replace it with one of its child's
-    mutated2Root = eraseNodeMutate(mutated1Root)
-    printAsFormula(mutated2Root, False)
+    while random.random() < ernMR:
+        root = eraseNodeMutate(root)
+    if verbose:
+        printAsFormula(root, False)
     # binary and unary swap mutation,
     # change the operator of a Node (e.g.: plus -> minus, sqrt -> exp)
-    nodesToExchange = 2
     # oneChildFunctions = [math.sqrt, math.exp, math.sin, math.cos, math.tan, math.log2, math.log10]
     # twoChildFunctions = [plus, minus, multiplication, division, power]
-    mutated3Root = exchangeNodeMutation(mutated2Root, nodesToExchange)
-    printAsFormula(mutated3Root, False)
+    while random.random() < exnMR:
+        root = exchangeNodeMutation(root, 1)
+    if verbose:
+        printAsFormula(root, False)
     # Leaf value mutation
     # change value of ConstLeaves (e.g.: ConstLeaf(42) -> ConstLeaf(69), RandLeaf(1,9) -> RandLeaf(3,6)
-    mutated4Root = leafValueMutation(mutated3Root, 2, 9, 1)
-    printAsFormula(mutated4Root, False)
+    while random.random() < lvMR:
+        root = leafValueMutation(root, 2, 9, 1)
+    if verbose:
+        printAsFormula(root, False)
     # Leaf type mutation
     # change the type (class) of a leaf (e.g.: ConstLeaf(42) -> RandLeaf(3,6)
     # note we need for the OldValueLeaf creation the dataframe, the column name list and max lag
-    mutated5Root = exchangeLeafMutation(mutated4Root, 2, dataFrame, colNameList, maxLag,
-                                        constMU=10, constSigma=1, randMin=1, randMax=10, nMu=10, nSigma=1)
+    while random.random() < exlMR:
+        root = exchangeLeafMutation(root, 2, dataFrame, colNameList, maxLag,
+                                            constMU=10, constSigma=1, randMin=1, randMax=10, nMu=10, nSigma=1)
+    if verbose:
+        printAsFormula(root, False)
+    return root
 
-    printAsFormula(mutated5Root, False)
-    return mutated5Root
+
+def copyTree(tree):
+    return tree
 
 
 # NOTICE:

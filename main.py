@@ -11,8 +11,7 @@ import inout
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # set random seed for reproducibility
-    random.seed(5)
-
+    # random.seed(5)
     df = inout.readInCSV("data/gasincome.csv")
     colNameList = ['G']
     listOfTimes = []
@@ -38,10 +37,19 @@ if __name__ == '__main__':
         print(f"mean error rate:{error/count}")
     '''
 
-    #tempTree1 = et.createRandomEquationTree(10, False, 0, 10, 10, 1, df, colNameList, 3, 1)
     # first only use itself for predicting
     # drop 'Y' and transform the dataFrame to a Series
     df.drop(columns=['Y'], inplace=True)
-
+    maxLag = 3
     s = pd.Series(df['G'], index=df.index)
-    ts.randomSearch(s, 1, 1000, True)
+    # first random search a legal solution
+    tree = ts.randomSearchV2(s, maxLag, 500, False)
+    et.printAsFormula(tree, True)
+    print(f"with the fitness of : {ts.fitnessNTimes(s, tree, maxLag, 10)}")
+
+
+    #ts.localHillClimb(s, colNameList, tree, maxLag, 3, 1000, False, True)
+    et.printAsFormula(tree, True)
+    print(f"after with the fitness of : {ts.fitnessNTimes(s, tree, maxLag, 10)}")
+
+
